@@ -30,9 +30,14 @@ FILES="$(find . -type f -name \*.hpp -or -name \*.h -or -name \*.cpp -or -name \
 echo "Checking $(echo "$FILES" | wc -l) files. This may take a while."
 DIFFS=""
 if command -v parallel > /dev/null; then
+    PAROPTS=" --group "
+    if [ -z "$CI" ]; then
+      PAROPTS="$PAROPTS --bar "
+    fi
+
     echo "Using GNU parallel"
     CMD="${BINARY} -style=file --output-replacements-xml {} | grep '<replacement ' > /dev/null && echo {}"
-    DIFFS=$( echo "$FILES" | parallel --bar --group "$CMD" )
+    DIFFS=$( echo "$FILES" | parallel $PAROPTS "$CMD" )
 else
     echo "Install GNU parallel to format in parallel."
     for cfile in $FILES; do
