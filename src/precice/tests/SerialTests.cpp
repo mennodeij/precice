@@ -1457,6 +1457,83 @@ BOOST_AUTO_TEST_CASE(MappingNearestProjectionImplicitEdges)
   testMappingNearestProjection(defineEdgesExplicitly, configFile, context);
 }
 
+BOOST_AUTO_TEST_CASE(MappingNearestNeighborGradient)
+{
+  using Eigen::Vector3d;
+
+  PRECICE_TEST("SolverOne"_on(1_rank), "SolverTwo"_on(1_rank));
+  const std::string configFile = _pathToTests + "mapping-nearest-gradient.xml";
+  const double z = 0.3;
+
+  // MeshOne
+  Vector3d coordOneA{0.0, 0.0, z};
+  Vector3d coordOneB{1.0, 0.0, z};
+
+  // MeshTwo
+  Vector3d coordTwoA{0.1, 0.0, z};
+  Vector3d coordTwoB{0.9, 0.0, z};
+
+  double valOneA = 1.0;
+  double valOneB = 3.0;
+
+  Vector3d gradientOneA{2.0, 0.0, 0.0};
+  Vector3d gradientOneB{2.0, 0.0, 0.0};
+
+  double expectedValTwoA = 1.2;
+  double expectedValTwoB = 2.8;
+
+  if (context.isNamed("SolverOne")) {
+    SolverInterface cplInterface("SolverOne", configFile, 0, 1);
+    const int meshOneID = cplInterface.getMeshID("MeshOne");
+
+    int idA = cplInterface.setMeshVertex(meshOneID, coordOneA.data());
+    int idB = cplInterface.setMeshVertex(meshOneID, coordOneB.data());
+
+    double maxDt = cplInterface.initialize();
+    BOOST_TEST(cplInterface.isCouplingOngoing(), "Sending participant should have to advance once!");
+
+    int dataAID = cplInterface.getDataID("DataOne", meshOneID);
+    cplInterface.writeScalarData(dataAID, idA, valOneA);
+    cplInterface.writeScalarData(dataAID, idB, valOneB);
+
+    cplInterface.writeGradient(dataAID, idA, gradientOneA.data());
+    cplInterface.writeGradient(dataAID, idB, gradientOneB.data());
+
+    // Advance, thus send the data to the receiving partner.
+    cplInterface.advance(maxDt);
+    BOOST_TEST(!cplInterface.isCouplingOngoing(), "Sending participant should have to advance once!");
+    cplInterface.finalize();
+  } else {
+    SolverInterface cplInterface("SolverTwo", configFile, 0, 1);
+
+    int meshTwoID = cplInterface.getMeshID("MeshTwo");
+
+    // Setup receiving mesh.
+    int idA = cplInterface.setMeshVertex(meshTwoID, coordTwoA.data());
+    int idB = cplInterface.setMeshVertex(meshTwoID, coordTwoB.data());
+
+    // Initialize, thus receive the data and map.
+    double maxDt = cplInterface.initialize();
+    BOOST_TEST(cplInterface.isCouplingOngoing(), "Receiving participant should have to advance once!");
+
+    // Advance, thus receive the data from the sending partner
+    cplInterface.advance(maxDt);
+
+    // Read the mapped data from the mesh.
+    int    dataAID = cplInterface.getDataID("DataOne", meshTwoID);
+    double valueA, valueB;
+    cplInterface.readScalarData(dataAID, idA, valueA);
+    cplInterface.readScalarData(dataAID, idB, valueB);
+
+    BOOST_TEST(valueA == expectedValTwoA);
+    BOOST_TEST(valueB == expectedValTwoB);
+
+    // Verify that there is only one time step necessary.
+    BOOST_TEST(!cplInterface.isCouplingOngoing(), "Receiving participant should have to advance once!");
+    cplInterface.finalize();
+  }
+}
+
 /**
  * @brief Tests sending one mesh to multiple participants
  *

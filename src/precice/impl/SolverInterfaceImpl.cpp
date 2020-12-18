@@ -31,6 +31,7 @@
 #include "math/geometry.hpp"
 #include "mesh/Data.hpp"
 #include "mesh/Edge.hpp"
+#include "mesh/Gradient.hpp"
 #include "mesh/Mesh.hpp"
 #include "mesh/SharedPointer.hpp"
 #include "mesh/Utils.hpp"
@@ -209,6 +210,7 @@ void SolverInterfaceImpl::configure(
     const mesh::PtrMesh &mesh   = meshContext->mesh;
     const auto           meshID = mesh->getID();
     _meshIDs[mesh->getName()]   = meshID;
+
     PRECICE_ASSERT(_dataIDs.find(meshID) == _dataIDs.end());
     _dataIDs[meshID] = std::map<std::string, int>();
     PRECICE_ASSERT(_dataIDs.find(meshID) != _dataIDs.end());
@@ -216,6 +218,15 @@ void SolverInterfaceImpl::configure(
       PRECICE_ASSERT(_dataIDs[meshID].find(data->getName()) == _dataIDs[meshID].end());
       _dataIDs[meshID][data->getName()] = data->getID();
     }
+
+    PRECICE_ASSERT(_gradientIDs.find(meshID) == _gradientIDs.end());
+    _gradientIDs[meshID] = std::map<std::string, int>();
+    PRECICE_ASSERT(_gradientIDs.find(meshID) != _gradientIDs.end());
+    for (const mesh::PtrGradient &grad : mesh->gradients()) {
+      PRECICE_ASSERT(_gradientIDs[meshID].find(grad->getName()) == _gradientIDs[meshID].end());
+      _gradientIDs[meshID][grad->getName()] = grad->getDataID();
+    }
+
     std::string                meshName   = mesh->getName();
     mesh::PtrMeshConfiguration meshConfig = config.getMeshConfiguration();
   }
@@ -640,6 +651,15 @@ int SolverInterfaceImpl::getDataID(
   return _dataIDs.at(meshID).at(dataName);
 }
 
+bool SolverInterfaceImpl::hasGradient(
+    const std::string &dataName, int meshID) const
+{
+  PRECICE_TRACE(dataName, meshID);
+  PRECICE_VALIDATE_MESH_ID(meshID);
+  const auto &sub_dataIDs = _gradientIDs.at(meshID);
+  return sub_dataIDs.find(dataName) != sub_dataIDs.end();
+}
+
 int SolverInterfaceImpl::getMeshVertexSize(
     int meshID) const
 {
@@ -687,6 +707,7 @@ int SolverInterfaceImpl::setMeshVertex(
   PRECICE_DEBUG("MeshRequirement: " << context.meshRequirement);
   index = mesh->createVertex(internalPosition).getID();
   mesh->allocateDataValues();
+  mesh->allocateGradientValues();
   return index;
 }
 
@@ -708,6 +729,7 @@ void SolverInterfaceImpl::setMeshVertices(
     ids[i] = mesh->createVertex(current).getID();
   }
   mesh->allocateDataValues();
+  mesh->allocateGradientValues();
 }
 
 void SolverInterfaceImpl::getMeshVertices(
@@ -1106,6 +1128,61 @@ void SolverInterfaceImpl::writeVectorData(
   }
 }
 
+void SolverInterfaceImpl::writeBlockGradient(
+    int           forDataID,
+    int           size,
+    const int*    valueIndices,
+    const double* gradientValues)
+{
+  PRECICE_TRACE(forDataID, size);
+  PRECICE_CHECK(_state != State::Finalized, "writeGradient(...) cannot be called before finalize().");
+  PRECICE_VALIDATE_DATA_ID(forDataID);
+
+  DataContext &context = _accessor->dataContext(forDataID);
+
+  int valueDim = context.fromData->getDimensions();
+  int spaceDim = context.mesh->getDimensions();
+
+  Eigen::MatrixXd grads = Eigen::Map<const Eigen::MatrixXd>(gradientValues, valueDim, size*spaceDim);
+  PRECICE_DEBUG("gradients = " << grads);
+  PRECICE_REQUIRE_DATA_WRITE(forDataID);
+
+  mesh::PtrGradient gradient = context.mesh->gradient(forDataID);
+  Eigen::MatrixXd &target = gradient->values();
+  PRECICE_ASSERT(target.rows() == grads.rows());
+  PRECICE_ASSERT(target.cols() == grads.cols());
+
+  //assign values
+  target = grads;
+}
+
+void SolverInterfaceImpl::writeGradient(
+    int           forDataID,
+    int           valueIndex,
+    const double *gradientValue)
+{
+  PRECICE_TRACE(forDataID, valueIndex);
+  PRECICE_CHECK(_state != State::Finalized, "writeGradient(...) cannot be called before finalize().");
+  PRECICE_VALIDATE_DATA_ID(forDataID);
+
+  DataContext &context = _accessor->dataContext(forDataID);
+
+  int valueDim = context.fromData->getDimensions();
+  int spaceDim = context.mesh->getDimensions();
+
+  Eigen::MatrixXd grad = Eigen::Map<const Eigen::MatrixXd>(gradientValue, valueDim, spaceDim);
+  PRECICE_DEBUG("gradient = " << grad);
+  PRECICE_REQUIRE_DATA_WRITE(forDataID);
+
+  mesh::PtrGradient gradient = context.mesh->gradient(forDataID);
+  Eigen::MatrixXd &gradientValues = gradient->values();
+
+  // assign values
+  gradientValues.block(0,valueIndex*spaceDim, valueDim, spaceDim) = grad;
+  PRECICE_DEBUG("Input gradient for index " << valueIndex << " = " << grad);
+  PRECICE_DEBUG("Gradients matrix is now :" << gradient->values());
+}
+
 void SolverInterfaceImpl::writeBlockScalarData(
     int           fromDataID,
     int           size,
@@ -1443,6 +1520,7 @@ void SolverInterfaceImpl::computePartitions()
       meshContext->mesh->computeBoundingBox();
     }
     meshContext->mesh->allocateDataValues();
+    meshContext->mesh->allocateGradientValues();
   }
 }
 

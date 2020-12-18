@@ -10,6 +10,7 @@ size_t Gradient::_gradientCount = 0;
 Gradient::Gradient()
     : _name(""),
       _id(-1),
+      _dataId(-1),
       _dimensions(0)
 {
   PRECICE_ASSERT(false);
@@ -18,10 +19,12 @@ Gradient::Gradient()
 Gradient::Gradient(
     const std::string &name,
     int                id,
+    int                dataId,
     int                dimensions)
     : _values(),
       _name(name),
       _id(id),
+      _dataId(dataId),
       _dimensions(dimensions)
 {
   PRECICE_ASSERT(dimensions > 0, dimensions);
@@ -50,9 +53,14 @@ const std::string &Gradient::getName() const
   return _name;
 }
 
-int Gradient::getID() const
+//int Gradient::getID() const
+//{
+//  return _id;
+//}
+
+int Gradient::getDataID() const
 {
-  return _id;
+  return _dataId;
 }
 
 void Gradient::toZero()

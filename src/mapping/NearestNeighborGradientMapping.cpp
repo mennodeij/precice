@@ -72,30 +72,31 @@ void NearestNeighborGradientMapping::computeMapping()
       PRECICE_INFO("Mapping distance " << distanceStatistics);
     }
   } else {
-    PRECICE_ASSERT(getConstraint() == CONSERVATIVE, getConstraint());
-    PRECICE_DEBUG("Compute conservative mapping");
-    precice::utils::Event e2(baseEvent + ".getIndexOnVertices", precice::syncMode);
-    auto                  rtree = mesh::rtree::getVertexRTree(output());
-    e2.stop();
-    size_t verticesSize = input()->vertices().size();
-    _vertexIndices.resize(verticesSize);
-    utils::statistics::DistanceAccumulator distanceStatistics;
-    const mesh::Mesh::VertexContainer &    inputVertices = input()->vertices();
-    for (size_t i = 0; i < verticesSize; i++) {
-      const Eigen::VectorXd &coords = inputVertices[i].getCoords();
-      // Search for the input vertex inside the output mesh and add index to _vertexIndices
-      rtree->query(boost::geometry::index::nearest(coords, 1),
-                   boost::make_function_output_iterator([&](size_t const &val) {
-                     const auto &match = output()->vertices()[val];
-                     _vertexIndices[i] = match.getID();
-                     distanceStatistics(bg::distance(match, coords));
-                   }));
-    }
-    if (distanceStatistics.empty()) {
-      PRECICE_INFO("Mapping distance not available due to empty partition.");
-    } else {
-      PRECICE_INFO("Mapping distance " << distanceStatistics);
-    }
+    PRECICE_ASSERT(false, "Conservative mapping not available for nearest-neighbor-gradient mapping");
+    //PRECICE_ASSERT(getConstraint() == CONSERVATIVE, getConstraint());
+    //PRECICE_DEBUG("Compute conservative mapping");
+    //precice::utils::Event e2(baseEvent + ".getIndexOnVertices", precice::syncMode);
+    //auto                  rtree = mesh::rtree::getVertexRTree(output());
+    //e2.stop();
+    //size_t verticesSize = input()->vertices().size();
+    //_vertexIndices.resize(verticesSize);
+    //utils::statistics::DistanceAccumulator distanceStatistics;
+    //const mesh::Mesh::VertexContainer &    inputVertices = input()->vertices();
+    //for (size_t i = 0; i < verticesSize; i++) {
+    //  const Eigen::VectorXd &coords = inputVertices[i].getCoords();
+    //  // Search for the input vertex inside the output mesh and add index to _vertexIndices
+    //  rtree->query(boost::geometry::index::nearest(coords, 1),
+    //               boost::make_function_output_iterator([&](size_t const &val) {
+    //                 const auto &match = output()->vertices()[val];
+    //                 _vertexIndices[i] = match.getID();
+    //                 distanceStatistics(bg::distance(match, coords));
+    //               }));
+    //}
+    //if (distanceStatistics.empty()) {
+    //  PRECICE_INFO("Mapping distance not available due to empty partition.");
+    //} else {
+    //  PRECICE_INFO("Mapping distance " << distanceStatistics);
+    //}
   }
   _hasComputedMapping = true;
 }
@@ -156,9 +157,9 @@ void NearestNeighborGradientMapping::map(
 
       // get a view on the required gradient tensor
       const Eigen::MatrixXd &grad  = inputGradient.block(0,i*spaceDimensions,valueDimensions,spaceDimensions);
-
+      PRECICE_DEBUG("Gradient matrix at inputIndex " << inputIndex << " = " << grad);
       // compute the distance between the required point and the found point
-      const Eigen::VectorXd &delta = input()->vertices()[inputIndex].getCoords() - output()->vertices()[i].getCoords();
+      const Eigen::VectorXd &delta = output()->vertices()[inputIndex].getCoords() - input()->vertices()[i].getCoords();
 
       PRECICE_ASSERT(delta.size() == spaceDimensions, delta.size(), spaceDimensions);
 
@@ -181,15 +182,15 @@ void NearestNeighborGradientMapping::map(
   } else {
     // does a CONSERVATIVE mapping even make sense, there is nothing to conserve?
     PRECICE_ASSERT(false, "CONSERVATIVE gradient mapping is not implemented");
-    PRECICE_ASSERT(getConstraint() == CONSERVATIVE, getConstraint());
-    PRECICE_DEBUG("Map conservative");
-    size_t const inSize = input()->vertices().size();
-    for (size_t i = 0; i < inSize; i++) {
-      int const outputIndex = _vertexIndices[i] * valueDimensions;
-      for (int dim = 0; dim < valueDimensions; dim++) {
-        outputValues(outputIndex + dim) += inputValues((i * valueDimensions) + dim);
-      }
-    }
+    //PRECICE_ASSERT(getConstraint() == CONSERVATIVE, getConstraint());
+    //PRECICE_DEBUG("Map conservative");
+    //size_t const inSize = input()->vertices().size();
+    //for (size_t i = 0; i < inSize; i++) {
+    //  int const outputIndex = _vertexIndices[i] * valueDimensions;
+    //  for (int dim = 0; dim < valueDimensions; dim++) {
+    //    outputValues(outputIndex + dim) += inputValues((i * valueDimensions) + dim);
+    //  }
+    //}
   }
 }
 

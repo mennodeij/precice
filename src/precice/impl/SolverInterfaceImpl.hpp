@@ -247,6 +247,15 @@ public:
   /// Returns data id corresponding to the given name (from configuration) and mesh.
   int getDataID(const std::string &dataName, int meshID) const;
 
+  /**
+   * @brief Checks if the gradient with given data name is used by a solver and mesh.
+   *
+   * @param[in] dataName the name of the data
+   * @param[in] meshID the id of the associated mesh
+   * @returns whether the gradient is used.
+   */
+  bool hasGradient(const std::string &dataName, int meshID) const;
+
   /// Returns the number of nodes of a mesh.
   int getMeshVertexSize(int meshID) const;
 
@@ -382,6 +391,92 @@ public:
    */
   void writeVectorData(
       int           fromDataID,
+      int           valueIndex,
+      const double *value);
+
+  /**
+   * @brief Writes gradient given as block.
+   *
+   * This function writes values of specified vertices to a dataID.
+   * Values are provided as a block of continuous memory.
+   * valueIndices contains the indices of the vertices
+   *
+   * For each vertex, the gradient is an m-by-n matrix, where the number
+   * of rows represent the value dimension, and the number of columns
+   * the spatial dimension. For example, the gradient of a scalar in 3D is
+   * given in a 1x3 matrix, which when multiplied by the location difference
+   * column vector (i.e. a 3x1 matrix) gives the gradient contribution as a
+   * scalar. Usually, for vector fields the value dimension and spatial dimension are
+   * equal, but this is not required.
+   *
+   * The format in 2 and 3 spatial dimensions is as follows:
+   *   Scalar: Field on each vertex is (s)
+   *      ds0/dx, ds0/dy, ds1/dx, ds1/dy, ... , dsN/dx, dsN/dy (2D)
+   *      ds0/dx, ds0/dy, ds0/dz, ds1/dx, ds1/dy, ds1/dz, ... , dsN/dx, dsN/dy, dsN/dz (3D)
+   *
+   *  Vector2: Field on each vertex is (u,v)
+   *      du0/dx, du0/dy, du1/dx, du1/dy, ..., duN/dx, duN/dy,
+   *      dv0/dx, dv0/dy, dv1/dx, dv1/dy, ..., dvN/dx, dvN/dy (2D)
+   *
+   *      du0/dx, du0/dy, du0/dz, du1/dx, du1/dy, du1/dz, ..., duN/dx, duN/dy, duN/dz,
+   *      dv0/dx, dv0/dy, dv0/dz, dv1/dx, dv1/dy, dv1/dz, ..., dvN/dx, dvN/dy, dvN/dz (3D)
+   *
+   *  Vector3: Field on each vertex is (u,v,w)
+   *      du0/dx, du0/dy, du1/dx, du1/dy, ..., duN/dx, duN/dy,
+   *      dv0/dx, dv0/dy, dv1/dx, dv1/dy, ..., dvN/dx, dvN/dy,
+   *      dw0/dx, dw0/dy, dw1/dx, dw1/dy, ..., dwN/dx, dwN/dy (2D)
+   *
+   *      du0/dx, du0/dy, du0/dz, du1/dx, du1/dy, du1/dz, ..., duN/dx, duN/dy, duN/dz,
+   *      dv0/dx, dv0/dy, dv0/dz, dv1/dx, dv1/dy, dv1/dz, ..., dvN/dx, dvN/dy, dvN/dz,
+   *      dw0/dx, dw0/dy, dw0/dz, dw1/dx, dw1/dy, dw1/dz, ..., dwN/dx, dwN/dy, dwN/dz (3D)
+   *
+   * @param[in] forDataID data ID to write gradients for.
+   * @param[in] size Number n of vertices.
+   * @param[in] valueIndices Indices of the vertices.
+   * @param[in] values pointer to the vector values.
+   *
+   * @pre count of available elements at values matches the configured dimension * size
+   * @pre count of available elements at valueIndices matches the given size
+   * @pre initialize() has been called
+   *
+   * @see SolverInterface::setMeshVertex()
+   */
+  void writeBlockGradient(
+      int           forDataID,
+      int           size,
+      const int*    valueIndices,
+      const double* gradientValues);
+
+  /**
+   * @brief Writes gradient to a vertex
+   *
+   * The format in 2 and 3 spatial dimensions is as follows:
+   *   Scalar: Field on the vertex is (s)
+   *      ds/dx, ds/dy        (2D)
+   *      ds/dx, ds/dy, ds/dz (3D)
+   *
+   *  Vector2: Field on each vertex is (u,v)
+   *      du/dx, du/dy,
+   *      dv/dx, dv/dy, (2D)
+   *
+   *      du/dx, du/dy, du/dz,
+   *      dv/dx, dv/dy, dv/dz(3D)
+   *
+   *  Vector3: Field on each vertex is (u,v,w)
+   *      du/dx, du/dy,
+   *      dv/dx, dv/dy,
+   *      dw/dx, dw/dy (2D)
+   *
+   *      du/dx, du/dy, du/dz,
+   *      dv/dx, dv/dy, dv/dz,
+   *      dw/dx, dw/dy, dw/dz (3D)
+   *
+   * @param[in] forDataID data ID to write gradients for.
+   * @param[in] valueIndex Index of the vertex.
+   * @param[in] value pointer to the gradient value.
+   */
+  void writeGradient(
+      int           forDataID,
       int           valueIndex,
       const double *value);
 
@@ -542,6 +637,9 @@ private:
 
   /// dataIDs referenced by meshID and data name
   std::map<int, std::map<std::string, int>> _dataIDs;
+
+  /// gradientIDs referenced by meshID and data name
+  std::map<int, std::map<std::string, int>> _gradientIDs;
 
   std::map<std::string, m2n::BoundM2N> _m2ns;
 

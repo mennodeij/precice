@@ -31,7 +31,6 @@ BOOST_AUTO_TEST_CASE(Scalar2DConsistent)
   PtrGradient inGradientScalar = inMesh->createGradient("InDataScalar", 1);
   
   int     inDataScalarID = inDataScalar->getID();
-  int     inGradScalarID = inGradientScalar->getID();
   
   Vertex &inVertex0      = inMesh->createVertex(Eigen::Vector2d(0.0, 0.0));
   Vertex &inVertex1      = inMesh->createVertex(Eigen::Vector2d(1.0, 0.0));
@@ -66,8 +65,8 @@ BOOST_AUTO_TEST_CASE(Scalar2DConsistent)
   BOOST_TEST(outValuesScalar(1) == inValuesScalar(1));
 
   // Map data with almost coinciding vertices, has to result in values + gradient effect
-  inVertex0.setCoords(outVertex0.getCoords() + Eigen::Vector2d::Constant(0.1));
-  inVertex1.setCoords(outVertex1.getCoords() - Eigen::Vector2d::Constant(0.1));
+  outVertex0.setCoords(inVertex0.getCoords() + Eigen::Vector2d::Constant(0.1));
+  outVertex1.setCoords(inVertex1.getCoords() - Eigen::Vector2d::Constant(0.1));
   mapping.computeMapping();
   mapping.map(inDataScalarID, outDataScalarID);
   BOOST_TEST(mapping.hasComputedMapping() == true);
@@ -87,7 +86,6 @@ BOOST_AUTO_TEST_CASE(Vector2DConsistent)
   PtrGradient inGradientVector = inMesh->createGradient("InDataVector", 2);
   
   int     inDataVectorID =     inDataVector->getID();
-  int     inGradVectorID = inGradientVector->getID();
   
   Vertex &inVertex0      = inMesh->createVertex(Eigen::Vector2d(0.0, 0.0)); // p_0
   Vertex &inVertex1      = inMesh->createVertex(Eigen::Vector2d(1.0, 1.0)); // p_1
@@ -129,8 +127,8 @@ BOOST_AUTO_TEST_CASE(Vector2DConsistent)
   BOOST_TEST(outValuesVector(3) == inValuesVector(3));
 
   // Map data with almost coinciding vertices, has to result in values + gradient effect.
-  inVertex0.setCoords(outVertex0.getCoords() + Eigen::Vector2d(0.1, 0.1));
-  inVertex1.setCoords(outVertex1.getCoords() - Eigen::Vector2d(0.1, 0.1));
+  outVertex0.setCoords(inVertex0.getCoords() + Eigen::Vector2d(0.1, 0.1));
+  outVertex1.setCoords(inVertex1.getCoords() - Eigen::Vector2d(0.1, 0.1));
   mapping.computeMapping();
   mapping.map(inDataVectorID, outDataVectorID);
   BOOST_TEST(mapping.hasComputedMapping() == true);
@@ -152,8 +150,7 @@ BOOST_AUTO_TEST_CASE(Vector2DData3DConsistent)
   PtrGradient inGradientVector = inMesh->createGradient("InDataVector", 3);
   
   int     inDataVectorID =     inDataVector->getID();
-  int     inGradVectorID = inGradientVector->getID();
-  
+
   Vertex &inVertex0      = inMesh->createVertex(Eigen::Vector2d(0.0, 0.0)); // p_0
   Vertex &inVertex1      = inMesh->createVertex(Eigen::Vector2d(1.0, 1.0)); // p_1
   inMesh->allocateDataValues();
@@ -200,8 +197,8 @@ BOOST_AUTO_TEST_CASE(Vector2DData3DConsistent)
   
 
   // Map data with almost coinciding vertices, has to result in values + gradient effect.
-  inVertex0.setCoords(outVertex0.getCoords() + Eigen::Vector2d(0.1, 0.1));
-  inVertex1.setCoords(outVertex1.getCoords() - Eigen::Vector2d(0.1, 0.1));
+  outVertex0.setCoords(inVertex0.getCoords() + Eigen::Vector2d(0.1, 0.1));
+  outVertex1.setCoords(inVertex1.getCoords() - Eigen::Vector2d(0.1, 0.1));
   mapping.computeMapping();
   mapping.map(inDataVectorID, outDataVectorID);
   BOOST_TEST(mapping.hasComputedMapping() == true);
@@ -225,7 +222,6 @@ BOOST_AUTO_TEST_CASE(Scalar3DConsistent)
   PtrGradient inGradientScalar = inMesh->createGradient("InDataScalar", 1);
   
   int     inDataScalarID = inDataScalar->getID();
-  int     inGradScalarID = inGradientScalar->getID();
   
   Vertex &inVertex0      = inMesh->createVertex(Eigen::Vector3d(0.0, 0.0, 0.0));
   Vertex &inVertex1      = inMesh->createVertex(Eigen::Vector3d(1.0, 0.0, 0.0));
@@ -260,8 +256,8 @@ BOOST_AUTO_TEST_CASE(Scalar3DConsistent)
   BOOST_TEST(outValuesScalar(1) == inValuesScalar(1));
 
   // Map data with almost coinciding vertices, has to result in values + gradient effect
-  inVertex0.setCoords(outVertex0.getCoords() + Eigen::Vector3d::Constant(0.1));
-  inVertex1.setCoords(outVertex1.getCoords() - Eigen::Vector3d::Constant(0.1));
+  outVertex0.setCoords(inVertex0.getCoords() + Eigen::Vector3d::Constant(0.1));
+  outVertex1.setCoords(inVertex1.getCoords() - Eigen::Vector3d::Constant(0.1));
   mapping.computeMapping();
   mapping.map(inDataScalarID, outDataScalarID);
   BOOST_TEST(mapping.hasComputedMapping() == true);

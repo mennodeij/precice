@@ -57,6 +57,7 @@ void SolverInterfaceConfiguration::xmlTagCallback(
   if (tag.getName() == "solver-interface") {
     _dimensions = tag.getIntAttributeValue("dimensions");
     _dataConfiguration->setDimensions(_dimensions);
+    _gradientConfiguration->setDimensions(_dimensions);
     _meshConfiguration->setDimensions(_dimensions);
     _participantConfiguration->setDimensions(_dimensions);
   } else {

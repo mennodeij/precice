@@ -120,16 +120,17 @@ private:
   const std::string VALUE_CONSISTENT   = "consistent";
   const std::string VALUE_CONSERVATIVE = "conservative";
 
-  const std::string VALUE_NEAREST_NEIGHBOR      = "nearest-neighbor";
-  const std::string VALUE_NEAREST_PROJECTION    = "nearest-projection";
-  const std::string VALUE_RBF_TPS               = "rbf-thin-plate-splines";
-  const std::string VALUE_RBF_MULTIQUADRICS     = "rbf-multiquadrics";
-  const std::string VALUE_RBF_INV_MULTIQUADRICS = "rbf-inverse-multiquadrics";
-  const std::string VALUE_RBF_VOLUME_SPLINES    = "rbf-volume-splines";
-  const std::string VALUE_RBF_GAUSSIAN          = "rbf-gaussian";
-  const std::string VALUE_RBF_CTPS_C2           = "rbf-compact-tps-c2";
-  const std::string VALUE_RBF_CPOLYNOMIAL_C0    = "rbf-compact-polynomial-c0";
-  const std::string VALUE_RBF_CPOLYNOMIAL_C6    = "rbf-compact-polynomial-c6";
+  const std::string VALUE_NEAREST_NEIGHBOR          = "nearest-neighbor";
+  const std::string VALUE_NEAREST_NEIGHBOR_GRADIENT = "nearest-neighbor-gradient";
+  const std::string VALUE_NEAREST_PROJECTION        = "nearest-projection";
+  const std::string VALUE_RBF_TPS                   = "rbf-thin-plate-splines";
+  const std::string VALUE_RBF_MULTIQUADRICS         = "rbf-multiquadrics";
+  const std::string VALUE_RBF_INV_MULTIQUADRICS     = "rbf-inverse-multiquadrics";
+  const std::string VALUE_RBF_VOLUME_SPLINES        = "rbf-volume-splines";
+  const std::string VALUE_RBF_GAUSSIAN              = "rbf-gaussian";
+  const std::string VALUE_RBF_CTPS_C2               = "rbf-compact-tps-c2";
+  const std::string VALUE_RBF_CPOLYNOMIAL_C0        = "rbf-compact-polynomial-c0";
+  const std::string VALUE_RBF_CPOLYNOMIAL_C6        = "rbf-compact-polynomial-c6";
 
   const std::string VALUE_TIMING_INITIAL    = "initial";
   const std::string VALUE_TIMING_ON_ADVANCE = "onadvance";

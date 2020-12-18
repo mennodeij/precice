@@ -148,6 +148,8 @@ public:
 
   const PtrData &data(int dataID) const;
 
+  bool hasGradient(const PtrData forData) const;
+
   const PtrGradient &gradient(int dataID) const;
 
   const PtrGradient &gradient(const PtrData forData) const;

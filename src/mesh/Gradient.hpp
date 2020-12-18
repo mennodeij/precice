@@ -47,6 +47,7 @@ public:
   Gradient(
       const std::string &name,
       int                id,
+      int                dataId,
       int                dimension);
 
   /// Destructor, decrements gradient count.
@@ -61,8 +62,12 @@ public:
   /// Returns the name of the gradient data set, as set in the config file.
   const std::string &getName() const;
 
-  /// Returns the ID of the gradient data set (supposed to be unique).
-  int getID() const;
+  // Returns the ID of the gradient data set (supposed to be unique).
+  // to avoid confusion, do not expose this
+  // int getID() const;
+
+  /// Returns the ID of the data set that the gradient belongs to.
+  int getDataID() const;
 
   /// Sets all values to zero
   void toZero();
@@ -84,6 +89,9 @@ private:
 
   /// ID of the gradient data set (supposed to be unique).
   int _id;
+
+  /// ID of the data that the gradient belongs to
+  int _dataId;
 
   /// Dimensionality of one gradient value.
   int _dimensions;

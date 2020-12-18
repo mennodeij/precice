@@ -114,6 +114,12 @@ int SolverInterface::getDataID(
   return _impl->getDataID(dataName, meshID);
 }
 
+bool SolverInterface::hasGradient(
+    const std::string &dataName, int meshID) const
+{
+  return _impl->hasGradient(dataName, meshID);
+}
+
 bool SolverInterface::hasToEvaluateSurrogateModel() const
 {
   return _impl->hasToEvaluateSurrogateModel();
@@ -228,6 +234,23 @@ void SolverInterface::mapWriteDataFrom(
     int fromMeshID)
 {
   _impl->mapWriteDataFrom(fromMeshID);
+}
+
+void SolverInterface::writeBlockGradient(
+    int           dataID,
+    int           size,
+    const int *   valueIndices,
+    const double* values)
+{
+  _impl->writeBlockGradient(dataID, size, valueIndices, values);
+}
+
+void SolverInterface::writeGradient(
+      int           dataID,
+      int           valueIndex,
+      const double *value)
+{
+  _impl->writeGradient(dataID, valueIndex, value);
 }
 
 void SolverInterface::writeBlockVectorData(

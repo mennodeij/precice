@@ -383,6 +383,25 @@ void precicef_write_vdata_(
   impl->writeVectorData(*dataID, *valueIndex, dataValue);
 }
 
+void precicef_write_block_gradient_(
+    const int *forDataID,
+    const int *size,
+    int *      valueIndices,
+    double *   gradientValues)
+{
+  PRECICE_CHECK(impl != nullptr, errormsg);
+  impl->writeBlockGradient(*forDataID, *size, valueIndices, gradientValues);
+}
+
+void precicef_write_gradient_(
+    const int *   forDataID,
+    const int *   valueIndex,
+    const double *gradientValue)
+{
+  PRECICE_CHECK(impl != nullptr, errormsg);
+  impl->writeGradient(*forDataID, *valueIndex, gradientValue);
+}
+
 void precicef_write_bsdata_(
     const int *dataID,
     const int *size,

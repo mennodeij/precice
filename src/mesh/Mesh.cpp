@@ -159,8 +159,14 @@ PtrGradient &Mesh::createGradient(
                   "Gradient \"" << name << "\" cannot be created twice for "
                             << "mesh \"" << _name << "\". Please rename or remove one of the use-gradient tags with name \"" << name << "\".");
   }
+
+  auto iter = std::find_if(_data.begin(), _data.end(), [name](PtrData const &ptr) {
+    return ptr->getName() == name;
+  });
+  PRECICE_ASSERT(iter != _data.end(), "Data with name = " << name << " not found in mesh \"" << _name << "\".");
   int id = Gradient::getGradientCount();
-  PtrGradient grad(new Gradient(name, id, dimension));
+  int dataID = (*iter)->getID();
+  PtrGradient grad(new Gradient(name, id, dataID, dimension));
   _gradients.push_back(grad);
   return _gradients.back();
 }
@@ -174,16 +180,25 @@ const PtrGradient &Mesh::gradient(
     int dataID) const
 {
   auto iter = std::find_if(_gradients.begin(), _gradients.end(), [dataID](PtrGradient const &ptr) {
-    return ptr->getID() == dataID;
+    return ptr->getDataID() == dataID;
   });
   PRECICE_ASSERT(iter != _gradients.end(), "Gradient with data ID = " << dataID << " not found in mesh \"" << _name << "\".");
   return *iter;
 }
 
+bool Mesh::hasGradient(
+    const PtrData forData) const
+{
+  auto iter = std::find_if(_gradients.begin(), _gradients.end(), [forData](PtrGradient const &ptr) {
+    return ptr->getName() == forData->getName();
+  });
+  return iter != _gradients.end();
+}
+
 const PtrGradient &Mesh::gradient(
     const PtrData forData) const
 {
-    auto iter = std::find_if(_gradients.begin(), _gradients.end(), [forData](PtrGradient const &ptr) {
+  auto iter = std::find_if(_gradients.begin(), _gradients.end(), [forData](PtrGradient const &ptr) {
     return ptr->getName() == forData->getName();
   });
   PRECICE_ASSERT(iter != _gradients.end(), "Gradient for data name = " << forData->getName() << " not found in mesh \"" << _name << "\".");
@@ -259,24 +274,31 @@ void Mesh::allocateGradientValues()
 
     The gradient is used as G*v = r [where v is always a spaceDim-vector]
 
-    Scalar in 2D  => 1 row (= valueDim) x 2 columns (= spaceDim)
+    Scalar in 2D space => 1 row (= valueDim) x 2 columns (= spaceDim)
              |v0|
              |v1|
    |g00 g01| |r0|
 
-    2D vector    => 2 rows (=valueDim) x 2 columns (= spaceDim)
+    2D vector in 2D space => 2 rows (=valueDim) x 2 columns (= spaceDim)
               |v0|
               |v1|
     |g00 g01| |r0|
     |g10 g11| |r1|
 
-    Scalar in 3D => 1 row (= valueDim) x 3 columns (= spaceDim)
+    Scalar in 3D space => 1 row (= valueDim) x 3 columns (= spaceDim)
                   |v0|
                   |v1|
                   |v2|
     |g00 g01 g02| |r0|
 
-    3D vector    => 3 rows (=valueDim) x 3 columns (= spaceDim)
+    2D vector in 3D space => 2 rows (=valueDim) x 3 columns (= spaceDim)
+                  |v0|
+                  |v1|
+                  |v2|
+    |g00 g01 g02| |r0|
+    |g10 g11 g12| |r1|
+
+    3D vector in 3D space   => 3 rows (=valueDim) x 3 columns (= spaceDim)
                   |v0|
                   |v1|
                   |v2|
@@ -287,15 +309,8 @@ void Mesh::allocateGradientValues()
     */
     const SizeType expectedColumnCount = expectedCount * spaceDim;
     const auto     actualColumnCount   = static_cast<SizeType>(grad->values().cols());
-    
-    /*
-    Eigen::MatrixXd& values = grad->values();
-    values.resize(valueDim, expectedColumnCount);
-    values.setZero(); // is this correct? If this is used to re-allocate, it won't work
-                      // but the approach below doesn't work either with utils::append
-    //*/
+
     // Shrink Buffer
-    
     if (expectedColumnCount < actualColumnCount) {
       grad->values().resize(spaceDim, expectedColumnCount);
     }
@@ -303,7 +318,8 @@ void Mesh::allocateGradientValues()
     if (expectedColumnCount > actualColumnCount) {
       const auto leftToAllocate = expectedColumnCount - actualColumnCount;
       utils::append(grad->values(), (Eigen::MatrixXd) Eigen::MatrixXd::Zero(valueDim, leftToAllocate));
-    }//*/
+    }
+
     PRECICE_DEBUG("Gradient " << grad->getName() << " now has " << grad->values().size() << " values");
     PRECICE_DEBUG("Gradient " << grad->getName() << " now has " << grad->values().rows() << " rows");
     PRECICE_DEBUG("Gradient " << grad->getName() << " now has " << grad->values().cols() << " columns");
